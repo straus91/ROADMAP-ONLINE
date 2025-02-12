@@ -2,26 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Model Editor</title>
+  <title>ROADMAP Model Editor</title>
   <!-- Bootstrap 4 CSS from CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
   <!-- JSON Editor via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
   <style>
-    /* Optional: style the description text (captions) if needed */
+    /* Overall font and spacing adjustments */
+    body {
+      font-size: 14px;
+    }
+    .json-editor .form-control {
+      font-size: 14px;
+    }
     .help-block {
-      font-size: 0.9em;
+      font-size: 0.85em;
       color: #6c757d;
+    }
+    h1, h3 {
+      margin-bottom: 20px;
+    }
+    #editor_holder {
+      margin-bottom: 20px;
+    }
+    
+    /* --- Custom CSS for the Content code checkboxes --- */
+    /* Use a contains selector to match schemapaths that include "Content code" */
+    [data-schemapath*="Content code"] .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    [data-schemapath*="Content code"] .checkbox-inline {
+      flex: 1 0 33%; /* Three columns: each takes about 33% of the width */
+      box-sizing: border-box;
+      margin-bottom: 5px;
     }
   </style>
 </head>
 <body>
   <div class="container my-4">
-    <h1>Model Editor</h1>
-    <!-- The JSON Editor will be rendered in this div -->
+    <h1>ROADMAP Model Editor</h1>
+    <!-- The JSON Editor will render here -->
     <div id="editor_holder"></div>
     <div class="mt-3">
       <button id="save_btn" class="btn btn-primary">Save Model</button>
+      <!-- New download button -->
+      <button id="download_btn" class="btn btn-secondary">Download Saved Models</button>
     </div>
     <hr>
     <h3>Saved Models</h3>
@@ -29,143 +55,270 @@
   </div>
 
   <script>
-    // Define the schema with blank defaults and explanatory descriptions.
+    // Define the schema with detailed descriptions.
+    // All fields are blank except "ROADMAP version" which is autopopulated.
     var schema = {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "ROADMAP.model.json",
       "title": "Model",
-      "description": "Enter details for each model. All fields are blank so you can start fresh each time.",
-      "$comment": "ROADMAP:00002",
+      "description": "Fill in the details for a model using the instructions provided for each field.",
       "type": "object",
       "properties": {
+        "ROADMAP version": {
+          "type": "string",
+          "title": "ROADMAP version",
+          "description": "Autopopulated: For now 2025-01-06",
+          "default": "2025-01-06"
+        },
         "Details": {
-          "title": "Details",
-          "description": "Detailed information about the model",
           "type": "object",
+          "title": "Details",
+          "description": "Detailed information about the model.",
           "properties": {
             "Name": {
               "type": "string",
               "title": "Model Name",
-              "description": "Enter the name of the model"
+              "description": "Title of the paper or the model if specifically given in the paper."
             },
             "Content code": {
               "type": "array",
+              "format": "checkbox",
+              "uniqueItems": true,
               "title": "Content Code",
-              "description": "Enter one or more content code categories",
-              "items": { "type": "string" }
+              "description": "Select one or more 2-letter content codes that capture the areas relevant to this project. Use the following codes as a guide:",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "BR", "BQ", "CA", "CH", "CT", "DM", "ED", "ER", "GI", "GU", "HN", "HP",
+                  "IN", "IR", "LM", "MI", "MK", "MR", "NM", "NR", "OB", "OI", "OT", "PD",
+                  "PH", "PR", "SQ", "RO", "RS", "US", "VA"
+                ],
+                "enum_titles": [
+                  "BR Breast (Imaging and Interventional)",
+                  "BQ Biomarkers/Quantitative Imaging",
+                  "CA Cardiac Radiology",
+                  "CH Chest Radiology",
+                  "CT Computed Tomography",
+                  "DM Digital Mammography",
+                  "ED Education",
+                  "ER Emergency Radiology",
+                  "GI Gastrointestinal Radiology",
+                  "GU Genitourinary Radiology",
+                  "HN Head and Neck",
+                  "HP Health Policy",
+                  "IN Informatics",
+                  "IR Interventional",
+                  "LM Leadership & Management",
+                  "MI Molecular Imaging",
+                  "MK Musculoskeletal Radiology",
+                  "MR Magnetic Resonance Imaging",
+                  "NM Nuclear Medicine",
+                  "NR Neuroradiology",
+                  "OB Obstetric/Gynecologic Radiology",
+                  "OI Oncologic Imaging",
+                  "OT Other",
+                  "PD Pediatric Radiology",
+                  "PH Physics and Basic Science",
+                  "PR Professionalism (including Ethics)",
+                  "SQ Quality Assurance/Quality Improvement (including radiation and general safety issues)",
+                  "RO Radiation Oncology",
+                  "RS Research and Statistical Methods",
+                  "US Ultrasound",
+                  "VA Vascular"
+                ]
+              }
             },
             "RadLex code": {
               "type": "array",
               "title": "RadLex Code",
-              "description": "Enter the RadLex code(s)",
+              "description": "List of RadLex IDs relevant to this model. For example, for a Cobb angle measurement in pediatrics, codes such as RID4756 (scoliosis) might be used.",
               "items": { "type": "string" }
             },
             "Author": {
               "type": "array",
               "title": "Author(s)",
-              "description": "List each author (fill in name, email, address, ORCID, and URL)",
+              "description": "List of authors as they appear in PubMed. Only the Name is required; other fields are informational.",
               "items": {
                 "type": "object",
                 "properties": {
-                  "Name": { "type": "string", "title": "Author Name", "description": "Full name of the author" },
-                  "Email": { "type": "string", "title": "Email", "description": "Email address" },
-                  "Address": { "type": "string", "title": "Address", "description": "Author's address" },
-                  "ORCID": { "type": "string", "title": "ORCID", "description": "ORCID link" },
-                  "URL": { "type": "string", "title": "URL", "description": "Website or profile URL" }
-                }
-              }
-            },
-            "Contributor": {
-              "type": "array",
-              "title": "Contributor(s)",
-              "description": "List any contributors with their contact information",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "Name": { "type": "string", "title": "Contributor Name", "description": "Name of the contributor" },
-                  "Email": { "type": "string", "title": "Email", "description": "Email address" },
-                  "Address": { "type": "string", "title": "Address", "description": "Contributor's address" },
-                  "ORCID": { "type": "string", "title": "ORCID", "description": "ORCID link" },
-                  "URL": { "type": "string", "title": "URL", "description": "Website or profile URL" }
-                }
+                  "Name": {
+                    "type": "string",
+                    "title": "Author Name",
+                    "description": "Full name of the author (e.g., 'Charles E. Kahn, Jr.')"
+                  },
+                  "Email": {
+                    "type": "string",
+                    "title": "Email",
+                    "description": "Email address (if provided)."
+                  },
+                  "Address": {
+                    "type": "string",
+                    "title": "Address",
+                    "description": "Address of the author or institution."
+                  },
+                  "ORCID": {
+                    "type": "string",
+                    "title": "ORCID",
+                    "description": "ORCID URL to help disambiguate the author."
+                  },
+                  "URL": {
+                    "type": "string",
+                    "title": "URL",
+                    "description": "Personal or institutional website (optional)."
+                  }
+                },
+                "required": ["Name"]
               }
             },
             "Organization": {
               "type": "array",
               "title": "Organization(s)",
-              "description": "List organizations involved",
+              "description": "Primary organizations contributing to the project (e.g., sponsors, companies, or research consortia). Do not list every affiliation.",
               "items": {
                 "type": "object",
                 "properties": {
-                  "Name": { "type": "string", "title": "Organization Name", "description": "Name of the organization" },
-                  "Contact name": { "type": "string", "title": "Contact Name", "description": "Name of contact person" },
-                  "Email": { "type": "string", "title": "Email", "description": "Email address" },
-                  "Address": { "type": "string", "title": "Address", "description": "Organization address" },
-                  "URL": { "type": "string", "title": "URL", "description": "Website URL" }
+                  "Name": {
+                    "type": "string",
+                    "title": "Organization Name",
+                    "description": "Name of the organization (e.g., a university)."
+                  },
+                  "Contact name": {
+                    "type": "string",
+                    "title": "Contact Name",
+                    "description": "Name of the senior contact associated with the organization."
+                  },
+                  "Email": {
+                    "type": "string",
+                    "title": "Email",
+                    "description": "Email of the contact (if provided)."
+                  },
+                  "Address": {
+                    "type": "string",
+                    "title": "Address",
+                    "description": "Physical address of the organization."
+                  },
+                  "URL": {
+                    "type": "string",
+                    "title": "URL",
+                    "description": "Organization website (if provided)."
+                  }
                 }
               }
             },
             "Date": {
               "type": "object",
               "title": "Date Information",
-              "description": "Dates related to the model",
+              "description": "Dates related to the model.",
               "properties": {
-                "Created": { "type": "string", "title": "Created", "description": "Creation date" },
-                "Published": { "type": "string", "title": "Published", "description": "Publication date" },
-                "Updated": { "type": "string", "title": "Updated", "description": "Last update date" }
+                "Created": {
+                  "type": "string",
+                  "title": "Created",
+                  "description": "If available, the first submission date in YYYY-MM-DD format; otherwise, the first publication date."
+                },
+                "Published": {
+                  "type": "string",
+                  "title": "Published",
+                  "description": "First publication date in YYYY-MM-DD format."
+                },
+                "Updated": {
+                  "type": "string",
+                  "title": "Updated",
+                  "description": "If applicable, the date when corrections/errata were made (YYYY-MM-DD)."
+                }
               }
             },
             "Version": {
               "type": "string",
               "title": "Version",
-              "description": "Enter the model version"
+              "description": "Version of the paper (e.g., 'v1')."
             },
             "Reference": {
               "type": "array",
               "title": "Reference",
-              "description": "Enter reference details (authors, title, source, etc.)",
+              "description": "Reference details (authors, title, source, year, DOI, URL, PMID, PMCID).",
               "items": {
                 "type": "object",
                 "properties": {
-                  "Authors": { "type": "string", "title": "Authors", "description": "Authors of the reference" },
-                  "Title": { "type": "string", "title": "Title", "description": "Title of the reference" },
-                  "Source": { "type": "string", "title": "Source", "description": "Source publication" },
-                  "Year": { "type": "integer", "title": "Year", "description": "Year of publication" },
-                  "DOI": { "type": "string", "title": "DOI", "description": "DOI identifier" },
-                  "URL": { "type": "string", "title": "URL", "description": "Link to reference" },
-                  "PMID": { "type": "integer", "title": "PMID", "description": "PubMed ID" },
-                  "PMCID": { "type": "string", "title": "PMCID", "description": "PubMed Central ID" }
+                  "Authors": {
+                    "type": "string",
+                    "title": "Authors",
+                    "description": "First author’s last name followed by 'et al.' (e.g., 'Suri A, et al')."
+                  },
+                  "Title": {
+                    "type": "string",
+                    "title": "Title",
+                    "description": "Title of the paper."
+                  },
+                  "Source": {
+                    "type": "string",
+                    "title": "Source",
+                    "description": "Full publication venue (e.g., 'Radiology: Artificial Intelligence')."
+                  },
+                  "Year": {
+                    "type": "integer",
+                    "title": "Year",
+                    "description": "Year the article was published."
+                  },
+                  "DOI": {
+                    "type": "string",
+                    "title": "DOI",
+                    "description": "DOI of the article (without the 'https://doi.org/' prefix)."
+                  },
+                  "URL": {
+                    "type": "string",
+                    "title": "URL",
+                    "description": "DOI link including 'https://doi.org/'."
+                  },
+                  "PMID": {
+                    "type": "integer",
+                    "title": "PMID",
+                    "description": "PubMed ID."
+                  },
+                  "PMCID": {
+                    "type": "string",
+                    "title": "PMCID",
+                    "description": "PubMed Central ID (e.g., 'PMC8017407')."
+                  }
                 }
               }
             },
             "License": {
               "type": "object",
               "title": "License",
-              "description": "License information for the model",
+              "description": "License details for the model.",
               "properties": {
-                "Text": { "type": "string", "title": "License Text", "description": "License text" },
-                "URL": { "type": "string", "title": "License URL", "description": "Link to the full license" }
+                "Text": {
+                  "type": "string",
+                  "title": "License Text",
+                  "description": "Name or description of the license (e.g., 'MIT' or a specific description)."
+                },
+                "URL": {
+                  "type": "string",
+                  "title": "License URL",
+                  "description": "Link to the full license (if provided)."
+                }
               }
             },
             "Contact": {
               "type": "string",
               "title": "Contact",
-              "description": "Enter a contact email or details"
+              "description": "Email of the corresponding author."
             },
             "Funding": {
-              "type": "string",
+              "type": "array",
               "title": "Funding",
-              "description": "Enter funding information (e.g., grant numbers)"
+              "description": "Codes for funding mechanisms (e.g., 'R01EB024532', 'P41EB017183').",
+              "items": { "type": "string" }
             },
             "Ethical review": {
               "type": "string",
               "title": "Ethical Review",
-              "description": "Enter details on ethical review (if applicable)"
+              "description": "Statement of IRB approval (or equivalent) as provided by the authors."
             },
             "Comments": {
               "type": "string",
               "title": "Comments",
-              "description": "Additional comments or notes"
+              "description": "Any additional comments or notes."
             }
           },
           "additionalProperties": false
@@ -173,24 +326,24 @@
         "Use": {
           "type": "object",
           "title": "Use",
-          "description": "Model use information",
+          "description": "Model use information.",
           "properties": {
             "Intended": {
               "type": "array",
               "title": "Intended Use",
-              "description": "Describe the intended use of the model",
+              "description": "Intended use cases for the model (choose from the provided list).",
               "items": { "type": "string" }
             },
             "Out-of-scope": {
               "type": "array",
               "title": "Out-of-scope Use",
-              "description": "Describe any out-of-scope uses",
+              "description": "Uses that are not intended for this model.",
               "items": { "type": "string" }
             },
             "Excluded": {
               "type": "array",
               "title": "Excluded Use",
-              "description": "Describe uses that are excluded",
+              "description": "Uses explicitly excluded by the authors (e.g., 'for research use only').",
               "items": { "type": "string" }
             }
           },
@@ -199,25 +352,28 @@
         "User": {
           "type": "object",
           "title": "User",
-          "description": "Model user information",
+          "description": "Model user information.",
           "properties": {
             "Intended": {
               "type": "array",
               "title": "Intended User",
-              "description": "Enter the intended users of the model",
-              "items": { "type": "string" }
+              "description": "Intended users of the model (choose from the list).",
+              "items": { "$ref": "#/$defs/user" },
+              "uniqueItems": true
             },
             "Out-of-scope": {
               "type": "array",
               "title": "Out-of-scope User",
-              "description": "Enter users for which the model is not intended",
-              "items": { "type": "string" }
+              "description": "Users for whom the model is not intended.",
+              "items": { "$ref": "#/$defs/user" },
+              "uniqueItems": true
             },
             "Excluded": {
               "type": "array",
               "title": "Excluded User",
-              "description": "Enter users that are excluded",
-              "items": { "type": "string" }
+              "description": "Users explicitly excluded (e.g., a Physician or Radiologist).",
+              "items": { "$ref": "#/$defs/user" },
+              "uniqueItems": true
             }
           },
           "additionalProperties": false
@@ -225,63 +381,71 @@
         "Metric": {
           "type": "array",
           "title": "Metric",
-          "description": "List any relevant performance metrics",
+          "description": "List of metrics used in the paper.",
           "items": { "type": "string" }
         },
         "Caveat": {
-          "type": "string",
+          "type": "array",
           "title": "Caveat",
-          "description": "Enter any caveats regarding the model"
+          "description": "Any limitations or caveats to model performance.",
+          "items": { "type": "string" }
         },
         "Decision threshold": {
           "type": "string",
           "title": "Decision Threshold",
-          "description": "Provide decision threshold details"
+          "description": "Description of performance results at a given threshold or for metrics not tied to a threshold."
         },
         "Ethical consideration": {
           "type": "string",
           "title": "Ethical Consideration",
-          "description": "Enter any ethical considerations related to the model"
-        },
-        "Recommendation": {
-          "type": "string",
-          "title": "Recommendation",
-          "description": "Provide your recommendation regarding model use"
+          "description": "Any ethical considerations, including analyses for disadvantaged subgroups."
         },
         "Availability": {
-          "type": "string",
+          "type": "object",
           "title": "Availability",
-          "description": "Enter information on model and dataset availability"
+          "description": "Information on how to access the dataset and/or the model.",
+          "properties": {
+            "Dataset": {
+              "type": "string",
+              "title": "Dataset",
+              "description": "Link or instructions to access the dataset, or a statement why it is not public."
+            },
+            "Model": {
+              "type": "string",
+              "title": "Model",
+              "description": "Link or instructions to access the code/model, or a statement why it is not public."
+            }
+          }
         },
         "Sustainability": {
           "type": "string",
           "title": "Sustainability",
-          "description": "Provide sustainability details if available"
+          "description": "Information regarding carbon footprint or energy resources needed."
         },
         "Time to train model": {
           "type": "string",
           "title": "Time to Train Model",
-          "description": "Enter the estimated training time for the model"
+          "description": "Time required to train the model."
         },
         "Time to evaluate single input": {
           "type": "string",
           "title": "Time to Evaluate Single Input",
-          "description": "Enter the estimated evaluation time for a single input"
+          "description": "Time required to evaluate a single input."
         },
         "Required processor": {
           "type": "string",
           "title": "Required Processor",
-          "description": "List the required processor/hardware specifications"
+          "description": "Hardware requirements for inference, if stated."
         },
         "Carbon footprint calculation": {
           "type": "string",
           "title": "Carbon Footprint Calculation",
-          "description": "Enter details on carbon footprint calculation (if applicable)"
+          "description": "Any details on the carbon footprint of training/inference."
         },
         "Method": {
           "type": "array",
           "title": "Method",
-          "description": "List relevant machine-learning methods or categories (provide valid URIs)",
+          "description": "Links to the machine-learning methods used (e.g., from Papers With Code).",
           "uniqueItems": true,
           "items": {
             "type": "string",
@@ -291,7 +455,7 @@
         "Task": {
           "type": "array",
           "title": "Task",
-          "description": "List tasks to which the model is applied (provide valid URIs)",
+          "description": "Links to the tasks targeted by the model (e.g., segmentation, classification).",
           "uniqueItems": true,
           "items": {
             "type": "string",
@@ -302,43 +466,38 @@
       "additionalProperties": false,
       "$defs": {
         "user": {
-          "type": "array",
-          "unevaluatedItems": false,
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "enum": [
-              "Administrator",
-              "Advanced practice provider",
-              "Caregiver",
-              "Diagnostic radiologist",
-              "Family member",
-              "General diagnostic radiologist",
-              "Interventional radiologist",
-              "Layperson",
-              "Non-physician provider",
-              "Nurse practitioner",
-              "Other",
-              "Patient",
-              "Physician assistant",
-              "Physician",
-              "Radiologist",
-              "Radiology nurse",
-              "Radiology technologist",
-              "Referring physician",
-              "Referring provider",
-              "Researcher",
-              "Subspecialist diagnostic radiologist"
-            ]
-          }
+          "type": "string",
+          "enum": [
+            "Administrator",
+            "Advanced practice provider",
+            "Caregiver",
+            "Diagnostic radiologist",
+            "Family member",
+            "General diagnostic radiologist",
+            "Interventional radiologist",
+            "Layperson",
+            "Non-physician provider",
+            "Nurse practitioner",
+            "Other",
+            "Patient",
+            "Physician assistant",
+            "Physician",
+            "Radiologist",
+            "Radiology nurse",
+            "Radiology technologist",
+            "Referring physician",
+            "Referring provider",
+            "Researcher",
+            "Subspecialist diagnostic radiologist"
+          ]
         }
       }
     };
 
-    // Define an empty initial model (all fields blank)
+    // An empty initial model (all fields blank, except the autopopulated ROADMAP version)
     var initialModel = {};
 
-    // Initialize JSON Editor in the "editor_holder" div.
+    // Initialize the JSON Editor in the "editor_holder" div.
     var editor = new JSONEditor(document.getElementById('editor_holder'), {
       schema: schema,
       theme: 'bootstrap4',
@@ -348,7 +507,7 @@
     // Start with an empty form.
     editor.setValue(initialModel);
 
-    // Function to update the list of saved models
+    // Function to update the list of saved models.
     function updateSavedModelsList() {
       var saved = localStorage.getItem('savedModels');
       var models = saved ? JSON.parse(saved) : [];
@@ -357,16 +516,17 @@
       models.forEach(function(model, index) {
         var li = document.createElement('li');
         li.className = 'list-group-item';
-        // Show a summary (use the model name if available)
-        var summary = model.Details && model.Details.Name ? model.Details.Name : "Model " + (index + 1);
+        // Display a summary using the model name (if available)
+        var summary = (model.Details && model.Details.Name) ? model.Details.Name : "Model " + (index + 1);
         li.textContent = summary;
         list.appendChild(li);
       });
     }
 
-    // Save Model: store the current form data and reset the form.
+    // Save Model: Store the current form data and reset the form.
     document.getElementById('save_btn').addEventListener('click', function() {
       var currentModel = editor.getValue();
+      console.log("Current model data:", currentModel); // Debug log to check data.
       var saved = localStorage.getItem('savedModels');
       var models = saved ? JSON.parse(saved) : [];
       models.push(currentModel);
@@ -375,6 +535,24 @@
       updateSavedModelsList();
       // Reset form to blank
       editor.setValue(initialModel);
+    });
+
+    // Download Saved Models: Prompt a download of the saved models JSON file.
+    document.getElementById('download_btn').addEventListener('click', function() {
+      var saved = localStorage.getItem('savedModels');
+      if (!saved) {
+        alert("No saved models to download.");
+        return;
+      }
+      var blob = new Blob([saved], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "saved_models.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
 
     // On page load, update the saved models list.
