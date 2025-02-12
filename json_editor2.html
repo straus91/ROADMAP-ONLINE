@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Roadmap Model Editor</title>
+  <!-- Optionally include a CSS framework, for example Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <!-- JSON Editor via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+</head>
+<body>
+  <div class="container my-4">
+    <h1>Roadmap Model Editor</h1>
+    <div id="editor_holder"></div>
+    <div class="mt-3">
+      <button id="save_btn" class="btn btn-primary">Save Model</button>
+      <button id="new_btn" class="btn btn-secondary">Add New Model</button>
+    </div>
+    <hr>
+    <h3>Saved Models</h3>
+    <ul id="saved_models" class="list-group"></ul>
+  </div>
+
+  <script>
+    // --- Define your schema ---
+    // This is a simplified version based on your provided JSON. You can expand it further as needed.
+    var schema = {
+      "type": "object",
+      "properties": {
+        "ROADMAP version": {
+          "type": "string",
+          "default": "2025-01-06"
+        },
+        "Model": {
+          "type": "array",
+          "format": "tabs",
+          "title": "Models",
+          "items": {
+            "type": "object",
+            "title": "Model",
+            "properties": {
+              "Details": {
+                "type": "object",
+                "properties": {
+                  "Name": {
+                    "type": "string",
+                    "default": "Zero-filled Skipped Connection Network (ZSNET)"
+                  },
+                  "Content code": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": ["AI", "MR", "NR"]
+                  },
+                  "RadLex code": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": ["TOFILL"]
+                  },
+                  "Author": {
+                    "type": "array",
+                    "format": "table",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "Name": { "type": "string", "default": "Alireza Radmanesh" },
+                        "Email": { "type": "string", "default": "String" },
+                        "Address": { "type": "string", "default": "String" },
+                        "ORCID": { "type": "string", "default": "https://orcid.org/0000-0000-0000-0000" },
+                        "URL": { "type": "string", "default": "http://www.altova.com/" }
+                      }
+                    }
+                  },
+                  "Contributor": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "Name": { "type": "string", "default": "String" },
+                        "Email": { "type": "string", "default": "String" },
+                        "Address": { "type": "string", "default": "String" },
+                        "ORCID": { "type": "string", "default": "String" },
+                        "URL": { "type": "string", "default": "String" }
+                      }
+                    }
+                  },
+                  "Organization": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "Name": { "type": "string", "default": "String" },
+                        "Contact name": { "type": "string", "default": "String" },
+                        "Email": { "type": "string", "default": "String" },
+                        "Address": { "type": "string", "default": "String" },
+                        "URL": { "type": "string", "default": "String" }
+                      }
+                    }
+                  },
+                  "Date": {
+                    "type": "object",
+                    "properties": {
+                      "Created": { "type": "string", "default": "TOFILL" },
+                      "Published": { "type": "string", "default": "2022-10-18" },
+                      "Updated": { "type": "string", "default": "TOFILL" }
+                    }
+                  },
+                  "Version": { "type": "string", "default": "TOFILL" },
+                  "Reference": {
+                    "type": "array",
+                    "format": "table",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "Authors": { "type": "string", "default": "Rudie JD, et al." },
+                        "Title": { "type": "string", "default": "The RSNA Abdominal Traumatic Injury CT (RATIC) Dataset" },
+                        "Source": { "type": "string", "default": "Radiology: Artificial Intelligence" },
+                        "Year": { "type": "integer", "default": 2024 },
+                        "DOI": { "type": "string", "default": "10.1148/ryai.240101" },
+                        "URL": { "type": "string", "default": "https://doi.org/10.1148/ryai.240101" },
+                        "PMID": { "type": "integer", "default": 39441109 },
+                        "PMCID": { "type": "string", "default": "PMC8017407" }
+                      }
+                    }
+                  },
+                  "License": {
+                    "type": "object",
+                    "properties": {
+                      "Text": { "type": "string", "default": "Not available" },
+                      "URL": { "type": "string", "default": "Not available" }
+                    }
+                  },
+                  "Contact": { "type": "string", "default": "mmuckley@meta.com" },
+                  "Funding": { "type": "string", "default": "R01EB024532, P41EB017183" },
+                  "Ethical review": {
+                    "type": "string",
+                    "default": "Retrospective study performed with local institutional review board approval"
+                  },
+                  "Comments": { "type": "string", "default": "String" }
+                }
+              },
+              "Use": {
+                "type": "object",
+                "properties": {
+                  "Intended": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": ["Detection", "Diagnosis"]
+                  },
+                  "Out-of-scope": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": ["Detection", "Diagnosis"]
+                  },
+                  "Excluded": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": ["Detection", "Diagnosis"]
+                  }
+                }
+              },
+              "User": {
+                "type": "object",
+                "properties": {
+                  "Intended": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": ["Radiologist", "Radiology technologist"]
+                  },
+                  "Out-of-scope": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": ["Patient", "Ordering Provider"]
+                  },
+                  "Excluded": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "default": ["None"]
+                  }
+                }
+              },
+              "Metric": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": ["SSIM", "PSNR", "MSE", "Subjective radiologists analysis"]
+              },
+              "Caveat": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": ["Trained on single institution dataset, no external validation", "Retrospective"]
+              },
+              "Decision threshold": { "type": "string", "default": "TOFILL" },
+              "Ethical consideration": { "type": "string", "default": "TOFILL" },
+              "Recommendation": {
+                "type": "string",
+                "default": "ZSNET can be used for MRI acceleration up to 4x with 100% subjectiveradiologist aproval and up to 14x with 94% subjective radiologist aproval"
+              },
+              "Availability": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": [
+                  "Dataset: public @ https://fastmri.med.nyu.edu/",
+                  "Model: no code @ https://pubs.rsna.org/doi/full/10.1148/ryai.210313"
+                ]
+              },
+              "Sustainability": { "type": "string", "default": "Not available" },
+              "Time to train model": { "type": "string", "default": "Not available" },
+              "Time to evaluate single input": { "type": "string", "default": "Not available" },
+              "Required processor": { "type": "string", "default": "24 V100 GPUs" },
+              "Carbon footprint calculation": { "type": "string", "default": "Not calculated" },
+              "Method": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": ["https://paperswithcode.com/method/unet", "https://paperswithcode.com/method/variational-network"]
+              },
+              "Task": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": ["https://paperswithcode.com/task/mri-reconstruction", "https://paperswithcode.com/task/image-reconstruction"]
+              }
+            }
+          }
+        }
+      }
+    };
+
+    // --- Load saved data if available ---
+    var savedData = localStorage.getItem('savedModels');
+    var initialData = savedData ? JSON.parse(savedData) : schema;
+
+    // --- Initialize the JSON Editor ---
+    var editor = new JSONEditor(document.getElementById('editor_holder'), {
+      schema: initialData,
+      theme: 'bootstrap4',
+      iconlib: 'fontawesome4'
+    });
+
+    // --- Utility: Update the list of saved models ---
+    function updateSavedModelsList(data) {
+      var list = document.getElementById('saved_models');
+      list.innerHTML = '';
+      if (data.Model && data.Model.length > 0) {
+        data.Model.forEach(function(model, index) {
+          var li = document.createElement('li');
+          li.className = 'list-group-item';
+          // Display the model name and a short summary (for example, the RadLex code)
+          li.textContent = model.Details.Name + ' (' + model.Details["RadLex code"].join(', ') + ')';
+          list.appendChild(li);
+        });
+      }
+    }
+
+    // --- Save Button: Store current state in localStorage ---
+    document.getElementById('save_btn').addEventListener('click', function() {
+      var currentData = editor.getValue();
+      localStorage.setItem('savedModels', JSON.stringify(currentData));
+      alert('Your model has been saved locally.');
+      updateSavedModelsList(currentData);
+    });
+
+    // --- New Button: Append a new model entry ---
+    document.getElementById('new_btn').addEventListener('click', function() {
+      var currentData = editor.getValue();
+      // Ensure there is a Model array
+      if (!currentData.Model) {
+        currentData.Model = [];
+      }
+      // Use the first model as a template (or define your own default structure)
+      var newModel = currentData.Model[0] ? JSON.parse(JSON.stringify(currentData.Model[0])) : {};
+      // Optionally clear fields for the new model
+      if (newModel.Details) {
+        newModel.Details.Name = "";
+      }
+      currentData.Model.push(newModel);
+      editor.setValue(currentData);
+      updateSavedModelsList(currentData);
+    });
+
+    // --- Initialize the saved models list on page load ---
+    updateSavedModelsList(editor.getValue());
+  </script>
+</body>
+</html>
