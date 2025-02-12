@@ -2,21 +2,31 @@
 <html>
 <head>
     <title>JSON Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/3.4.1/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/json-editor/2.10.0/jsoneditor.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <style>
+        body { margin: 20px; }
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 5px; background: #fff; }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h2>JSON Editor</h2>
-        <div id="editor_holder"></div>
-        <button id="submit" class="btn btn-primary">Save JSON</button>
-        <button id="download" class="btn btn-success">Download JSON</button>
+        <h2 class="text-center">JSON Editor</h2>
+        <div class="card">
+            <div id="editor_holder"></div>
+        </div>
+        <br>
+        <button id="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save JSON</button>
+        <button id="download" class="btn btn-success"><i class="fas fa-download"></i> Download JSON</button>
+        <input type="file" id="upload" class="btn btn-info" style="display:none;">
+        <label for="upload" class="btn btn-warning"><i class="fas fa-upload"></i> Upload JSON</label>
         <pre id="output" class="well"></pre>
     </div>
     
     <script>
-        // Define JSON schema based on your file
+        // Define JSON schema for improved UI
         const schema = {
             "title": "ROADMAP JSON Editor",
             "type": "object",
@@ -46,18 +56,18 @@
             }
         };
 
-        // Initialize JSON Editor
+        // Initialize JSON Editor with better UI
         const editor = new JSONEditor(document.getElementById('editor_holder'), {
             schema: schema,
             theme: 'bootstrap3',
-            iconlib: 'bootstrap3',
+            iconlib: 'fontawesome',
             disable_edit_json: false,
             disable_collapse: false,
             disable_properties: false,
             show_errors: "interaction"
         });
 
-        // Load JSON data
+        // Load initial JSON data
         const jsonData = { "ROADMAP version": "2025-01-06", "Model": [ { "Details": { "Name": "Zero-filled Skipped Connection Network (ZSNET)", "Content code": ["AI", "MR"], "RadLex code": ["TOFILL"], "Author": [{ "Name": "Alireza Radmanesh", "Email": "String" }] }, "Use": { "Intended": ["Detection", "Diagnosis"] } } ] };
         editor.setValue(jsonData);
 
@@ -75,6 +85,19 @@
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             document.body.removeChild(downloadAnchor);
+        });
+
+        // Upload JSON File
+        document.getElementById('upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const jsonContent = JSON.parse(e.target.result);
+                    editor.setValue(jsonContent);
+                };
+                reader.readAsText(file);
+            }
         });
     </script>
 </body>
