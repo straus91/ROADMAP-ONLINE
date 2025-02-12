@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Model Editor</title>
+  <!-- Bootstrap 4 CSS from CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <!-- JSON Editor via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+  <style>
+    /* Optional: style the description text (captions) if needed */
+    .help-block {
+      font-size: 0.9em;
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+  <div class="container my-4">
+    <h1>Model Editor</h1>
+    <!-- The JSON Editor will be rendered in this div -->
+    <div id="editor_holder"></div>
+    <div class="mt-3">
+      <button id="save_btn" class="btn btn-primary">Save Model</button>
+    </div>
+    <hr>
+    <h3>Saved Models</h3>
+    <ul id="saved_models" class="list-group"></ul>
+  </div>
+
+  <script>
+    // Define the schema with blank defaults and explanatory descriptions.
+    var schema = {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "ROADMAP.model.json",
+      "title": "Model",
+      "description": "Enter details for each model. All fields are blank so you can start fresh each time.",
+      "$comment": "ROADMAP:00002",
+      "type": "object",
+      "properties": {
+        "Details": {
+          "title": "Details",
+          "description": "Detailed information about the model",
+          "type": "object",
+          "properties": {
+            "Name": {
+              "type": "string",
+              "title": "Model Name",
+              "description": "Enter the name of the model"
+            },
+            "Content code": {
+              "type": "array",
+              "title": "Content Code",
+              "description": "Enter one or more content code categories",
+              "items": { "type": "string" }
+            },
+            "RadLex code": {
+              "type": "array",
+              "title": "RadLex Code",
+              "description": "Enter the RadLex code(s)",
+              "items": { "type": "string" }
+            },
+            "Author": {
+              "type": "array",
+              "title": "Author(s)",
+              "description": "List each author (fill in name, email, address, ORCID, and URL)",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "Name": { "type": "string", "title": "Author Name", "description": "Full name of the author" },
+                  "Email": { "type": "string", "title": "Email", "description": "Email address" },
+                  "Address": { "type": "string", "title": "Address", "description": "Author's address" },
+                  "ORCID": { "type": "string", "title": "ORCID", "description": "ORCID link" },
+                  "URL": { "type": "string", "title": "URL", "description": "Website or profile URL" }
+                }
+              }
+            },
+            "Contributor": {
+              "type": "array",
+              "title": "Contributor(s)",
+              "description": "List any contributors with their contact information",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "Name": { "type": "string", "title": "Contributor Name", "description": "Name of the contributor" },
+                  "Email": { "type": "string", "title": "Email", "description": "Email address" },
+                  "Address": { "type": "string", "title": "Address", "description": "Contributor's address" },
+                  "ORCID": { "type": "string", "title": "ORCID", "description": "ORCID link" },
+                  "URL": { "type": "string", "title": "URL", "description": "Website or profile URL" }
+                }
+              }
+            },
+            "Organization": {
+              "type": "array",
+              "title": "Organization(s)",
+              "description": "List organizations involved",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "Name": { "type": "string", "title": "Organization Name", "description": "Name of the organization" },
+                  "Contact name": { "type": "string", "title": "Contact Name", "description": "Name of contact person" },
+                  "Email": { "type": "string", "title": "Email", "description": "Email address" },
+                  "Address": { "type": "string", "title": "Address", "description": "Organization address" },
+                  "URL": { "type": "string", "title": "URL", "description": "Website URL" }
+                }
+              }
+            },
+            "Date": {
+              "type": "object",
+              "title": "Date Information",
+              "description": "Dates related to the model",
+              "properties": {
+                "Created": { "type": "string", "title": "Created", "description": "Creation date" },
+                "Published": { "type": "string", "title": "Published", "description": "Publication date" },
+                "Updated": { "type": "string", "title": "Updated", "description": "Last update date" }
+              }
+            },
+            "Version": {
+              "type": "string",
+              "title": "Version",
+              "description": "Enter the model version"
+            },
+            "Reference": {
+              "type": "array",
+              "title": "Reference",
+              "description": "Enter reference details (authors, title, source, etc.)",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "Authors": { "type": "string", "title": "Authors", "description": "Authors of the reference" },
+                  "Title": { "type": "string", "title": "Title", "description": "Title of the reference" },
+                  "Source": { "type": "string", "title": "Source", "description": "Source publication" },
+                  "Year": { "type": "integer", "title": "Year", "description": "Year of publication" },
+                  "DOI": { "type": "string", "title": "DOI", "description": "DOI identifier" },
+                  "URL": { "type": "string", "title": "URL", "description": "Link to reference" },
+                  "PMID": { "type": "integer", "title": "PMID", "description": "PubMed ID" },
+                  "PMCID": { "type": "string", "title": "PMCID", "description": "PubMed Central ID" }
+                }
+              }
+            },
+            "License": {
+              "type": "object",
+              "title": "License",
+              "description": "License information for the model",
+              "properties": {
+                "Text": { "type": "string", "title": "License Text", "description": "License text" },
+                "URL": { "type": "string", "title": "License URL", "description": "Link to the full license" }
+              }
+            },
+            "Contact": {
+              "type": "string",
+              "title": "Contact",
+              "description": "Enter a contact email or details"
+            },
+            "Funding": {
+              "type": "string",
+              "title": "Funding",
+              "description": "Enter funding information (e.g., grant numbers)"
+            },
+            "Ethical review": {
+              "type": "string",
+              "title": "Ethical Review",
+              "description": "Enter details on ethical review (if applicable)"
+            },
+            "Comments": {
+              "type": "string",
+              "title": "Comments",
+              "description": "Additional comments or notes"
+            }
+          },
+          "additionalProperties": false
+        },
+        "Use": {
+          "type": "object",
+          "title": "Use",
+          "description": "Model use information",
+          "properties": {
+            "Intended": {
+              "type": "array",
+              "title": "Intended Use",
+              "description": "Describe the intended use of the model",
+              "items": { "type": "string" }
+            },
+            "Out-of-scope": {
+              "type": "array",
+              "title": "Out-of-scope Use",
+              "description": "Describe any out-of-scope uses",
+              "items": { "type": "string" }
+            },
+            "Excluded": {
+              "type": "array",
+              "title": "Excluded Use",
+              "description": "Describe uses that are excluded",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "User": {
+          "type": "object",
+          "title": "User",
+          "description": "Model user information",
+          "properties": {
+            "Intended": {
+              "type": "array",
+              "title": "Intended User",
+              "description": "Enter the intended users of the model",
+              "items": { "type": "string" }
+            },
+            "Out-of-scope": {
+              "type": "array",
+              "title": "Out-of-scope User",
+              "description": "Enter users for which the model is not intended",
+              "items": { "type": "string" }
+            },
+            "Excluded": {
+              "type": "array",
+              "title": "Excluded User",
+              "description": "Enter users that are excluded",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "Metric": {
+          "type": "array",
+          "title": "Metric",
+          "description": "List any relevant performance metrics",
+          "items": { "type": "string" }
+        },
+        "Caveat": {
+          "type": "string",
+          "title": "Caveat",
+          "description": "Enter any caveats regarding the model"
+        },
+        "Decision threshold": {
+          "type": "string",
+          "title": "Decision Threshold",
+          "description": "Provide decision threshold details"
+        },
+        "Ethical consideration": {
+          "type": "string",
+          "title": "Ethical Consideration",
+          "description": "Enter any ethical considerations related to the model"
+        },
+        "Recommendation": {
+          "type": "string",
+          "title": "Recommendation",
+          "description": "Provide your recommendation regarding model use"
+        },
+        "Availability": {
+          "type": "string",
+          "title": "Availability",
+          "description": "Enter information on model and dataset availability"
+        },
+        "Sustainability": {
+          "type": "string",
+          "title": "Sustainability",
+          "description": "Provide sustainability details if available"
+        },
+        "Time to train model": {
+          "type": "string",
+          "title": "Time to Train Model",
+          "description": "Enter the estimated training time for the model"
+        },
+        "Time to evaluate single input": {
+          "type": "string",
+          "title": "Time to Evaluate Single Input",
+          "description": "Enter the estimated evaluation time for a single input"
+        },
+        "Required processor": {
+          "type": "string",
+          "title": "Required Processor",
+          "description": "List the required processor/hardware specifications"
+        },
+        "Carbon footprint calculation": {
+          "type": "string",
+          "title": "Carbon Footprint Calculation",
+          "description": "Enter details on carbon footprint calculation (if applicable)"
+        },
+        "Method": {
+          "type": "array",
+          "title": "Method",
+          "description": "List relevant machine-learning methods or categories (provide valid URIs)",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "Task": {
+          "type": "array",
+          "title": "Task",
+          "description": "List tasks to which the model is applied (provide valid URIs)",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "$defs": {
+        "user": {
+          "type": "array",
+          "unevaluatedItems": false,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "Administrator",
+              "Advanced practice provider",
+              "Caregiver",
+              "Diagnostic radiologist",
+              "Family member",
+              "General diagnostic radiologist",
+              "Interventional radiologist",
+              "Layperson",
+              "Non-physician provider",
+              "Nurse practitioner",
+              "Other",
+              "Patient",
+              "Physician assistant",
+              "Physician",
+              "Radiologist",
+              "Radiology nurse",
+              "Radiology technologist",
+              "Referring physician",
+              "Referring provider",
+              "Researcher",
+              "Subspecialist diagnostic radiologist"
+            ]
+          }
+        }
+      }
+    };
+
+    // Define an empty initial model (all fields blank)
+    var initialModel = {};
+
+    // Initialize JSON Editor in the "editor_holder" div.
+    var editor = new JSONEditor(document.getElementById('editor_holder'), {
+      schema: schema,
+      theme: 'bootstrap4',
+      iconlib: 'fontawesome4'
+    });
+
+    // Start with an empty form.
+    editor.setValue(initialModel);
+
+    // Function to update the list of saved models
+    function updateSavedModelsList() {
+      var saved = localStorage.getItem('savedModels');
+      var models = saved ? JSON.parse(saved) : [];
+      var list = document.getElementById('saved_models');
+      list.innerHTML = '';
+      models.forEach(function(model, index) {
+        var li = document.createElement('li');
+        li.className = 'list-group-item';
+        // Show a summary (use the model name if available)
+        var summary = model.Details && model.Details.Name ? model.Details.Name : "Model " + (index + 1);
+        li.textContent = summary;
+        list.appendChild(li);
+      });
+    }
+
+    // Save Model: store the current form data and reset the form.
+    document.getElementById('save_btn').addEventListener('click', function() {
+      var currentModel = editor.getValue();
+      var saved = localStorage.getItem('savedModels');
+      var models = saved ? JSON.parse(saved) : [];
+      models.push(currentModel);
+      localStorage.setItem('savedModels', JSON.stringify(models));
+      alert('Model saved successfully.');
+      updateSavedModelsList();
+      // Reset form to blank
+      editor.setValue(initialModel);
+    });
+
+    // On page load, update the saved models list.
+    updateSavedModelsList();
+  </script>
+</body>
+</html>
