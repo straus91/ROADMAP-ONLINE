@@ -3,70 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <title>ROADMAP Model Editor</title>
-  <!-- Bootstrap 4 CSS from CDN -->
+  <!-- Bootstrap 4 CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
   <!-- JSON Editor via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
   <style>
-    /* Overall font and spacing adjustments */
+    /* Basic reset and body styling */
     body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       font-size: 14px;
-      padding-top: 20px;
-      background: #f8f9fa;
-    }
-    .json-editor .form-control {
-      font-size: 14px;
-    }
-    .help-block {
-      font-size: 0.85em;
-      color: #6c757d;
+      background-color: #f2f2f2;
+      padding: 20px;
     }
     h1, h3 {
+      text-align: center;
       margin-bottom: 20px;
     }
+    /* Container for the editor */
     #editor_holder {
-      margin-bottom: 20px;
-      background: #fff;
-      padding: 15px;
+      background-color: #fff;
       border: 1px solid #ddd;
       border-radius: 4px;
+      padding: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    /* Save and Download button styling */
+    .btn {
+      min-width: 150px;
+      margin-right: 10px;
+    }
+    /* Saved models list styling */
+    #saved_models {
+      max-height: 300px;
+      overflow-y: auto;
     }
     /* --- Custom CSS for the Content code checkboxes --- */
-    /* Ensure that the Content code checkboxes are displayed in three columns */
+    /* Force the "Content code" array items to render as checkboxes in three columns */
     [data-schemapath*="Content code"] .checkbox-group {
       display: flex;
       flex-wrap: wrap;
     }
     [data-schemapath*="Content code"] .checkbox-inline {
-      flex: 1 0 33%;
+      flex: 1 0 33%;  /* 33% width for three columns; change to 50% for two columns */
       box-sizing: border-box;
       margin-bottom: 5px;
     }
-    /* Style for array control buttons (if shown) */
+    /* --- Custom tweaks for array control buttons --- */
     .json-editor .array-controls button {
       margin-right: 5px;
+      font-size: 12px;
+      padding: 3px 6px;
     }
   </style>
   <script>
-    // Override default language strings for array controls to be more user friendly.
-    // (These keys may vary depending on your JSON Editor version; adjust as needed.)
+    // (Optional) Override default language strings for array controls.
     if (!JSONEditor.defaults.languages.en) {
       JSONEditor.defaults.languages.en = {};
     }
-    var en = JSONEditor.defaults.languages.en;
-    en.button_add = "Add Item";
-    en.button_delete = "Delete Item";
-    en.button_delete_last = "Delete Last Item";
-    en.button_delete_all = "Delete All Items";
+    var lang = JSONEditor.defaults.languages.en;
+    lang.button_add = "Add Item";
+    lang.button_delete = "Delete Item";
+    lang.button_delete_last = "Delete Last Item";
+    lang.button_delete_all_rows = "Delete All Items";
   </script>
 </head>
 <body>
-  <div class="container my-4">
+  <div class="container">
     <h1>ROADMAP Model Editor</h1>
-    <!-- Editor holder -->
+    <!-- Editor container -->
     <div id="editor_holder"></div>
-    <div class="mt-3">
-      <!-- Initially disabled; they will be enabled when the editor is ready -->
+    <div class="text-center mb-3">
       <button id="save_btn" class="btn btn-primary" disabled>Save Model</button>
       <button id="download_btn" class="btn btn-secondary" disabled>Download Saved Models</button>
     </div>
@@ -76,9 +83,11 @@
   </div>
 
   <script>
-    // Define the schema with detailed descriptions.
+    // Define the JSON schema.
+    // - Using draft-07 so JSON Editor can parse it reliably.
+    // - "Method" and "Task" now use enumerations from Papers with Code.
     var schema = {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "$id": "ROADMAP.model.json",
       "title": "Model",
       "description": "Fill in the details for a model using the instructions provided for each field.",
@@ -106,7 +115,7 @@
               "options": { "checkbox": true },
               "uniqueItems": true,
               "title": "Content Code",
-              "description": "Select one or more 2-letter content codes that capture the areas relevant to this project. The options are:",
+              "description": "Select one or more 2-letter content codes relevant to this project.",
               "items": {
                 "type": "string",
                 "enum": [
@@ -114,45 +123,47 @@
                   "IN", "IR", "LM", "MI", "MK", "MR", "NM", "NR", "OB", "OI", "OT", "PD",
                   "PH", "PR", "SQ", "RO", "RS", "US", "VA"
                 ],
-                "enum_titles": [
-                  "BR Breast (Imaging and Interventional)",
-                  "BQ Biomarkers/Quantitative Imaging",
-                  "CA Cardiac Radiology",
-                  "CH Chest Radiology",
-                  "CT Computed Tomography",
-                  "DM Digital Mammography",
-                  "ED Education",
-                  "ER Emergency Radiology",
-                  "GI Gastrointestinal Radiology",
-                  "GU Genitourinary Radiology",
-                  "HN Head and Neck",
-                  "HP Health Policy",
-                  "IN Informatics",
-                  "IR Interventional",
-                  "LM Leadership & Management",
-                  "MI Molecular Imaging",
-                  "MK Musculoskeletal Radiology",
-                  "MR Magnetic Resonance Imaging",
-                  "NM Nuclear Medicine",
-                  "NR Neuroradiology",
-                  "OB Obstetric/Gynecologic Radiology",
-                  "OI Oncologic Imaging",
-                  "OT Other",
-                  "PD Pediatric Radiology",
-                  "PH Physics and Basic Science",
-                  "PR Professionalism (including Ethics)",
-                  "SQ Quality Assurance/Quality Improvement (including safety issues)",
-                  "RO Radiation Oncology",
-                  "RS Research and Statistical Methods",
-                  "US Ultrasound",
-                  "VA Vascular"
-                ]
+                "options": {
+                  "enum_titles": [
+                    "BR – Breast (Imaging and Interventional)",
+                    "BQ – Biomarkers/Quantitative Imaging",
+                    "CA – Cardiac Radiology",
+                    "CH – Chest Radiology",
+                    "CT – Computed Tomography",
+                    "DM – Digital Mammography",
+                    "ED – Education",
+                    "ER – Emergency Radiology",
+                    "GI – Gastrointestinal Radiology",
+                    "GU – Genitourinary Radiology",
+                    "HN – Head and Neck",
+                    "HP – Health Policy",
+                    "IN – Informatics",
+                    "IR – Interventional",
+                    "LM – Leadership & Management",
+                    "MI – Molecular Imaging",
+                    "MK – Musculoskeletal Radiology",
+                    "MR – Magnetic Resonance Imaging",
+                    "NM – Nuclear Medicine",
+                    "NR – Neuroradiology",
+                    "OB – Obstetric/Gynecologic Radiology",
+                    "OI – Oncologic Imaging",
+                    "OT – Other",
+                    "PD – Pediatric Radiology",
+                    "PH – Physics and Basic Science",
+                    "PR – Professionalism (including Ethics)",
+                    "SQ – Quality Assurance/Quality Improvement (including safety issues)",
+                    "RO – Radiation Oncology",
+                    "RS – Research and Statistical Methods",
+                    "US – Ultrasound",
+                    "VA – Vascular"
+                  ]
+                }
               }
             },
             "RadLex code": {
               "type": "array",
               "title": "RadLex Code",
-              "description": "List of RadLex IDs relevant to this model.",
+              "description": "List of RadLex IDs relevant to this model. See https://radlex.org/",
               "items": { "type": "string" }
             },
             "Author": {
@@ -165,27 +176,27 @@
                   "Name": {
                     "type": "string",
                     "title": "Author Name",
-                    "description": "Full name (e.g., 'Charles E. Kahn, Jr.')"
+                    "description": "Full name (e.g., 'Charles E. Kahn, Jr.')."
                   },
                   "Email": {
                     "type": "string",
                     "title": "Email",
-                    "description": "Email address (optional)."
+                    "description": "Optional email address."
                   },
                   "Address": {
                     "type": "string",
                     "title": "Address",
-                    "description": "Address of the author or institution (optional)."
+                    "description": "Optional address information."
                   },
                   "ORCID": {
                     "type": "string",
                     "title": "ORCID",
-                    "description": "ORCID URL (optional)."
+                    "description": "Optional ORCID URL."
                   },
                   "URL": {
                     "type": "string",
                     "title": "URL",
-                    "description": "Website (optional)."
+                    "description": "Optional website URL."
                   }
                 },
                 "required": ["Name"]
@@ -206,22 +217,22 @@
                   "Contact name": {
                     "type": "string",
                     "title": "Contact Name",
-                    "description": "Name of the primary contact."
+                    "description": "Primary contact for the organization."
                   },
                   "Email": {
                     "type": "string",
                     "title": "Email",
-                    "description": "Email address (optional)."
+                    "description": "Optional email for the contact."
                   },
                   "Address": {
                     "type": "string",
                     "title": "Address",
-                    "description": "Physical address (optional)."
+                    "description": "Optional physical address."
                   },
                   "URL": {
                     "type": "string",
                     "title": "URL",
-                    "description": "Website (optional)."
+                    "description": "Optional website URL."
                   }
                 }
               }
@@ -256,7 +267,7 @@
             "Reference": {
               "type": "array",
               "title": "Reference",
-              "description": "Reference details (e.g., authors, title, source).",
+              "description": "Reference details (e.g., authors, title, source, etc.).",
               "items": {
                 "type": "object",
                 "properties": {
@@ -283,7 +294,7 @@
                   "DOI": {
                     "type": "string",
                     "title": "DOI",
-                    "description": "DOI without the prefix."
+                    "description": "DOI (without the prefix)."
                   },
                   "URL": {
                     "type": "string",
@@ -334,7 +345,7 @@
             "Ethical review": {
               "type": "string",
               "title": "Ethical Review",
-              "description": "Statement of IRB approval or equivalent."
+              "description": "Statement of IRB approval (or equivalent)."
             },
             "Comments": {
               "type": "string",
@@ -379,21 +390,21 @@
               "type": "array",
               "title": "Intended User",
               "description": "Intended users (choose from the list).",
-              "items": { "$ref": "#/$defs/user" },
+              "items": { "$ref": "#/definitions/user" },
               "uniqueItems": true
             },
             "Out-of-scope": {
               "type": "array",
               "title": "Out-of-scope User",
               "description": "Users for whom the model is not intended.",
-              "items": { "$ref": "#/$defs/user" },
+              "items": { "$ref": "#/definitions/user" },
               "uniqueItems": true
             },
             "Excluded": {
               "type": "array",
               "title": "Excluded User",
               "description": "Users explicitly excluded.",
-              "items": { "$ref": "#/$defs/user" },
+              "items": { "$ref": "#/definitions/user" },
               "uniqueItems": true
             }
           },
@@ -402,7 +413,7 @@
         "Metric": {
           "type": "array",
           "title": "Metric",
-          "description": "List of metrics used in the paper.",
+          "description": "List of metrics used in the paper (e.g., accuracy, Dice, etc.).",
           "items": { "type": "string" }
         },
         "Caveat": {
@@ -424,24 +435,24 @@
         "Availability": {
           "type": "object",
           "title": "Availability",
-          "description": "Information on how to access the dataset and/or the model.",
+          "description": "How to access the dataset and/or the model.",
           "properties": {
             "Dataset": {
               "type": "string",
               "title": "Dataset",
-              "description": "Access link or instructions, or a statement if not public."
+              "description": "Link or instructions to access the dataset, or a statement if not public."
             },
             "Model": {
               "type": "string",
               "title": "Model",
-              "description": "Access link or instructions, or a statement if not public."
+              "description": "Link or instructions to access the code/model, or a statement if not public."
             }
           }
         },
         "Sustainability": {
           "type": "string",
           "title": "Sustainability",
-          "description": "Information on carbon footprint or energy resources needed."
+          "description": "Information regarding carbon footprint or energy requirements."
         },
         "Time to train model": {
           "type": "string",
@@ -463,29 +474,91 @@
           "title": "Carbon Footprint Calculation",
           "description": "Details on the carbon footprint."
         },
+
         "Method": {
           "type": "array",
           "title": "Method",
-          "description": "Links to machine-learning methods used.",
+          "description": "Choose from relevant methods (or multiple) used in AI for radiology, enumerated from Papers with Code.",
           "uniqueItems": true,
           "items": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "enum": [
+              "https://paperswithcode.com/method/unet",
+              "https://paperswithcode.com/method/nnunet",
+              "https://paperswithcode.com/method/v-net",
+              "https://paperswithcode.com/method/resnet",
+              "https://paperswithcode.com/method/inception",
+              "https://paperswithcode.com/method/vgg",
+              "https://paperswithcode.com/method/faster-r-cnn",
+              "https://paperswithcode.com/method/mask-r-cnn",
+              "https://paperswithcode.com/method/yolo",
+              "https://paperswithcode.com/method/vision-transformer",
+              "https://paperswithcode.com/method/gan",
+              "https://paperswithcode.com/method/cyclegan",
+              "https://paperswithcode.com/method/style-transfer",
+              "https://paperswithcode.com/method/siamese-network",
+              "https://paperswithcode.com/method/stable-diffusion",
+              "https://paperswithcode.com/method/variational-network"
+            ],
+            "options": {
+              "enum_titles": [
+                "U-Net",
+                "nnU-Net",
+                "V-Net",
+                "ResNet",
+                "Inception",
+                "VGG",
+                "Faster R-CNN",
+                "Mask R-CNN",
+                "YOLO",
+                "Vision Transformer",
+                "Generative Adversarial Network (GAN)",
+                "CycleGAN",
+                "Style Transfer",
+                "Siamese Network",
+                "Stable Diffusion",
+                "Variational Network"
+              ]
+            }
           }
         },
+
         "Task": {
           "type": "array",
           "title": "Task",
-          "description": "Links to tasks targeted by the model.",
+          "description": "Choose from relevant tasks that the model addresses, enumerated from Papers with Code.",
           "uniqueItems": true,
           "items": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "enum": [
+              "https://paperswithcode.com/task/classification-1",
+              "https://paperswithcode.com/task/segmentation",
+              "https://paperswithcode.com/task/object-detection",
+              "https://paperswithcode.com/task/domain-adaptation",
+              "https://paperswithcode.com/task/domain-generalization",
+              "https://paperswithcode.com/task/image-reconstruction",
+              "https://paperswithcode.com/task/image-generation",
+              "https://paperswithcode.com/task/super-resolution"
+            ],
+            "options": {
+              "enum_titles": [
+                "Classification",
+                "Segmentation",
+                "Object Detection",
+                "Domain Adaptation",
+                "Domain Generalization",
+                "Image Reconstruction",
+                "Image Generation",
+                "Super-Resolution"
+              ]
+            }
           }
         }
       },
       "additionalProperties": false,
-      "$defs": {
+      "definitions": {
         "user": {
           "type": "string",
           "enum": [
@@ -515,85 +588,116 @@
       }
     };
 
-    // Empty initial model
+    // Use an empty initial model.
     var initialModel = {};
 
-    // Initialize the JSON Editor in the "editor_holder" div.
-    var editor = new JSONEditor(document.getElementById('editor_holder'), {
-      schema: schema,
-      theme: 'bootstrap4',
-      iconlib: 'fontawesome4'
-    });
-
-    // Wait for the editor to be ready before enabling buttons
-    editor.on('ready', function() {
-      console.log("Editor is ready.");
-      document.getElementById('save_btn').disabled = false;
-      document.getElementById('download_btn').disabled = false;
-    });
-
-    // Set initial value
-    editor.setValue(initialModel);
-
-    // Function to update the list of saved models.
-    function updateSavedModelsList() {
-      var saved = localStorage.getItem('savedModels');
-      var models = saved ? JSON.parse(saved) : [];
-      var list = document.getElementById('saved_models');
-      list.innerHTML = '';
-      models.forEach(function(model, index) {
-        var li = document.createElement('li');
-        li.className = 'list-group-item';
-        var summary = (model.Details && model.Details.Name) ? model.Details.Name : "Model " + (index + 1);
-        li.textContent = summary;
-        list.appendChild(li);
+    // Wait for the DOM to load.
+    window.addEventListener("DOMContentLoaded", function() {
+      // Create the JSON Editor.
+      var editor = new JSONEditor(document.getElementById('editor_holder'), {
+        schema: schema,
+        theme: 'bootstrap4',
+        iconlib: 'fontawesome4'
       });
-    }
-
-    // Save Model button
-    document.getElementById('save_btn').addEventListener('click', function() {
-      try {
-        var currentModel = editor.getValue();
-        console.log("Current model data:", currentModel);
+      
+      // When the editor is ready, enable the Save/Download buttons.
+      editor.on('ready', function() {
+        console.log("Editor is ready.");
+        document.getElementById('save_btn').disabled = false;
+        document.getElementById('download_btn').disabled = false;
+        // Rename array control buttons for clarity.
+        updateArrayButtonLabels();
+      });
+      
+      // Set the initial (empty) value.
+      editor.setValue(initialModel);
+      
+      // Function to update labels on array control buttons.
+      function updateArrayButtonLabels() {
+        document.querySelectorAll('.json-editor-btntype-add').forEach(function(btn) {
+          btn.innerText = "Create Item";
+        });
+        document.querySelectorAll('.json-editor-btntype-delete').forEach(function(btn) {
+          btn.innerText = "Delete Item";
+        });
+        document.querySelectorAll('.json-editor-btntype-delete_last').forEach(function(btn) {
+          btn.innerText = "Delete Last Item";
+        });
+        document.querySelectorAll('.json-editor-btntype-delete_all_rows').forEach(function(btn) {
+          btn.innerText = "Delete All Items";
+        });
+      }
+      
+      // Function to update the Saved Models list.
+      function updateSavedModelsList() {
         var saved = localStorage.getItem('savedModels');
         var models = saved ? JSON.parse(saved) : [];
-        models.push(currentModel);
-        localStorage.setItem('savedModels', JSON.stringify(models));
-        alert('Model saved successfully.');
-        updateSavedModelsList();
-        editor.setValue(initialModel);
-      } catch (e) {
-        console.error("Error saving model:", e);
-        alert("Error saving model. See console for details.");
+        var list = document.getElementById('saved_models');
+        list.innerHTML = "";
+        models.forEach(function(model, index) {
+          var li = document.createElement('li');
+          li.className = "list-group-item";
+          var summary = (model.Details && model.Details.Name) ? model.Details.Name : "Model " + (index + 1);
+          li.textContent = summary;
+          list.appendChild(li);
+        });
       }
-    });
-
-    // Download Saved Models button
-    document.getElementById('download_btn').addEventListener('click', function() {
-      try {
-        var saved = localStorage.getItem('savedModels');
-        console.log("Saved models:", saved);
-        if (!saved) {
-          alert("No saved models to download.");
-          return;
+      
+      // Save Model button click handler.
+      document.getElementById('save_btn').addEventListener('click', function() {
+        try {
+          var currentModel = editor.getValue();
+          console.log("Current model data:", currentModel);
+          var saved = localStorage.getItem('savedModels');
+          var models = saved ? JSON.parse(saved) : [];
+          models.push(currentModel);
+          localStorage.setItem('savedModels', JSON.stringify(models));
+          alert("Model saved successfully.");
+          updateSavedModelsList();
+          // Reset the form.
+          editor.setValue(initialModel);
+        } catch (e) {
+          console.error("Error saving model:", e);
+          alert("Error saving model. See console for details.");
         }
-        var blob = new Blob([saved], { type: "application/json" });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement("a");
-        a.href = url;
-        a.download = "saved_models.json";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (e) {
-        console.error("Error downloading models:", e);
-        alert("Error downloading models. See console for details.");
-      }
+      });
+      
+      // Download Saved Models button click handler.
+      document.getElementById('download_btn').addEventListener('click', function() {
+        try {
+          var saved = localStorage.getItem('savedModels');
+          console.log("Saved models:", saved);
+          if (!saved) {
+            alert("No saved models to download.");
+            return;
+          }
+          var blob = new Blob([saved], { type: "application/json" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "saved_models.json";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          console.error("Error downloading models:", e);
+          alert("Error downloading models. See console for details.");
+        }
+      });
+      
+      // Update the saved models list on page load.
+      updateSavedModelsList();
     });
-
-    // Update the saved models list on page load.
-    updateSavedModelsList();
   </script>
+
+  <!--
+    NOTE on local usage:
+      - If you just double-click this file (file://...) in some browsers,
+        localStorage or the "download" functionality may be blocked or behave differently.
+      - Best to serve it via a local or remote HTTP server so localStorage and
+        downloads work properly (e.g. via GitHub Pages or a local dev server).
+  -->
+
 </body>
 </html>
